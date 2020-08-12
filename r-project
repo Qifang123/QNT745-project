@@ -1,0 +1,75 @@
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(tidyverse)
+library(readr)
+library(zeallot)
+library(countrycode)
+library(ISLR)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(GoodmanKruskal)
+library(arm)
+library(randomForest)
+library('reshape2')
+library('mice')
+
+
+hotel_data <-read_csv("/Users/Qifang/Downloads/hotel_bookings.csv")
+hotel_data[sapply(hotel_data, is.character)] <-lapply(hotel_data[sapply(hotel_data, is.character)], as.factor)
+str(hotel_data)
+summary(hotel_data)
+
+n <- length(hotel_data$children)
+for (i in 1:n) {
+  if (is.na(hotel_data$children[i]))
+    hotel_data$children[i] <- hotel_data$babies[i]
+}
+
+imp<-mice(hotel_data,m=30)
+imp_data<-complete(imp)
+
+ggplot(data = hotel_data, aes(x = hotel)) +
+  geom_bar(stat = "count") +
+  labs(title = "Booking Request by Hotel type",x = "Hotel type",y = "No. of bookings") +
+  theme_classic() + scale_color_brewer(palette = "Set2")
+
+ggplot(data = hotel_data,
+       aes(x = hotel,y = prop.table(stat(count)),fill = factor(is_canceled),
+           label = scales::percent(prop.table(stat(count))))) +
+  geom_bar(position = position_dodge()) +
+  geom_text(stat = "count",position = position_dodge(.9),vjust = -0.5,size = 3) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Cancellation Status by Hotel Type",x = "Hotel Type",y = "Count") +
+  theme_classic() + scale_fill_discrete(
+    name = "Booking Status",breaks = c("0", "1"),labels = c("Cancelled", "Not Cancelled"))
+
+
+hotel_data$arrival_date_month <-
+  factor(hotel_data$arrival_date_month, levels = month.name)
+
+ggplot(data = hotel_data, aes(x = arrival_date_month)) +
+  geom_bar(fill = "steelblue") +
+  geom_text(stat = "count", aes(label = ..count..), hjust = 1) +
+  coord_flip() + labs(title = "Month Wise Booking Request",x = "Month",y = "Count") +
+  theme_classic()
+
+ggplot(hotel_data, aes(arrival_date_month, fill = hotel)) +
+  geom_bar(position = position_dodge()) +
+  labs(title = "Booking Status by Month", x = "Month",y = "Count") + theme_bw()
+
+
+month_<-table(arrival_date_month)
+month_<-hotel_data.frame(month_)
+month_$arrival_date_month<-factor(month_$arrival_date_month, levels=month.name)
+ggplot(month_, aes(x=arrival_date_month, y=Freq, group=1)) + geom_line(col="navy") + 
+  ggtitle("Reservations by Arrival Month") + ylab("Count") + xlab("Month")+
+  theme(axis.text.x=element_text(angle=40))
+
+
+
+ggplot(hotel_data, aes(x=arrival_date_month, y=days_in_waiting_list, group=1)) + stat_summary(fun="mean", geom="line", col="navy") + 
+  ggtitle("Average Days on Waiting List by Arrival Month") + ylab("Waiting List: Average Days") + xlab("Month") +
+  theme(axis.text.x=element_text(angle=40))
